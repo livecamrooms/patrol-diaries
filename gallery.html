@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FHG Galleries – Patrol Diaries</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Patrol Diaries</h1>
+      <p class="tagline">FHG galleries · tracked affiliate links</p>
+      <nav class="nav">
+        <a href="index.html">Sites</a>
+        <a href="gallery.html" class="active">Galleries</a>
+        <a href="content.html">Latest</a>
+        <a href="links.html">Links</a>
+      </nav>
+    </div>
+  </header>
+  <main class="container">
+    <div class="search-bar">
+      <input id="q" type="search" placeholder="Search title, model, site…" autocomplete="off" />
+      <select id="site">
+        <option value="">All sites</option>
+      </select>
+    </div>
+    <p class="stats" id="stats"></p>
+    <div class="pager">
+      <button id="prev" type="button">← Prev</button>
+      <span id="pageinfo">Page 1</span>
+      <button id="next" type="button">Next →</button>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="pager">
+      <button id="prev2" type="button">← Prev</button>
+      <span id="pageinfo2">Page 1</span>
+      <button id="next2" type="button">Next →</button>
+    </div>
+  </main>
+  <footer><div class="container">All opens use your tracking gallery links</div></footer>
+  <script>
+    const PER = 48;
+    let all = [], filtered = [], page = 0;
+
+    function esc(s) {
+      return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function siteLabel(s) {
+      const map = {
+        asiansexdiary:'Asian Sex Diary', trikepatrol:'Trike Patrol', tuktukpatrol:'TukTuk Patrol',
+        helloladyboy:'Hello Ladyboy', milftrip:'MILF Trip', eurosexdiary:'Euro Sex Diary', toticos:'Toticos'
+      };
+      return map[s] || s;
+    }
+    function apply() {
+      const q = document.getElementById('q').value.trim().toLowerCase();
+      const site = document.getElementById('site').value;
+      filtered = all.filter(it => {
+        if (site && it.site !== site) return false;
+        if (!q) return true;
+        return `${it.title} ${it.model} ${it.site}`.toLowerCase().includes(q);
+      });
+      page = 0;
+      render();
+    }
+    function render() {
+      const totalPages = Math.max(1, Math.ceil(filtered.length / PER));
+      if (page >= totalPages) page = totalPages - 1;
+      if (page < 0) page = 0;
+      const slice = filtered.slice(page * PER, page * PER + PER);
+      document.getElementById('stats').textContent =
+        filtered.length + ' galleries' + (filtered.length !== all.length ? ' (filtered from ' + all.length + ')' : '');
+      const info = 'Page ' + (page + 1) + ' / ' + totalPages;
+      document.getElementById('pageinfo').textContent = info;
+      document.getElementById('pageinfo2').textContent = info;
+      document.getElementById('prev').disabled = document.getElementById('prev2').disabled = page <= 0;
+      document.getElementById('next').disabled = document.getElementById('next2').disabled = page >= totalPages - 1;
+      document.getElementById('grid').innerHTML = slice.map(it => {
+        const alt = esc((it.title || 'Gallery') + (it.model ? ' – ' + it.model : ''));
+        const thumbInner = it.thumb
+          ? `<img src="${esc(it.thumb)}" alt="${alt}" loading="lazy" referrerpolicy="no-referrer" onerror="this.classList.add('broken');this.nextElementSibling&&(this.nextElementSibling.hidden=false)" /><div class="thumb-fallback" hidden>${esc(siteLabel(it.site))}</div>`
+          : `<div class="thumb-fallback">${esc(siteLabel(it.site))}</div>`;
+        const thumb = `<a class="thumb-wrap" href="${it.link}" target="_blank" rel="noopener sponsored">${thumbInner}</a>`;
+        return `<article class="card">
+          ${thumb}
+          <div class="body">
+            <div><span class="badge">${esc(siteLabel(it.site))}</span></div>
+            <h2>${esc(it.title)}</h2>
+            <div class="meta">${esc(it.model || '')}${it.items ? ' · ' + esc(it.items) + ' items' : ''}</div>
+            <a class="btn" href="${it.link}" target="_blank" rel="noopener sponsored">Open gallery</a>
+          </div>
+        </article>`;
+      }).join('');
+    }
+    async function run() {
+      const data = await (await fetch('data.json')).json();
+      all = data.fhgs || [];
+      const sites = [...new Set(all.map(x => x.site))].sort();
+      const sel = document.getElementById('site');
+      sites.forEach(s => {
+        const o = document.createElement('option');
+        o.value = s; o.textContent = siteLabel(s);
+        sel.appendChild(o);
+      });
+      document.getElementById('q').addEventListener('input', apply);
+      sel.addEventListener('change', apply);
+      document.getElementById('prev').onclick = document.getElementById('prev2').onclick = () => { page--; render(); window.scrollTo(0,0); };
+      document.getElementById('next').onclick = document.getElementById('next2').onclick = () => { page++; render(); window.scrollTo(0,0); };
+      apply();
+    }
+    run();
+  </script>
+</body>
+</html>

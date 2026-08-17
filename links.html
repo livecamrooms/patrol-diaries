@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tracking links – Patrol Diaries</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Patrol Diaries</h1>
+      <p class="tagline">All affiliate tracking links</p>
+      <nav class="nav">
+        <a href="index.html">Sites</a>
+        <a href="gallery.html">Galleries</a>
+        <a href="content.html">Latest</a>
+        <a href="links.html" class="active">Links</a>
+      </nav>
+    </div>
+  </header>
+  <main class="container">
+    <div class="search-bar"><input id="q" type="search" placeholder="Filter links…" autocomplete="off" /></div>
+    <div class="list" id="list"></div>
+  </main>
+  <footer><div class="container">Tracked affiliate links</div></footer>
+  <script>
+    function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+    async function run(){
+      const data=await(await fetch('data.json')).json();
+      const programs=data.programs||[];
+      const list=document.getElementById('list');
+      function render(arr){
+        list.innerHTML=arr.map(p=>`<article class="list-item"><div style="flex:1;min-width:200px"><h3>${esc(p.name)}</h3><div class="meta">${esc(p.region)} · ${esc(p.slug)}</div><p style="color:var(--muted);font-size:0.78rem;word-break:break-all;margin:0.3rem 0 0">${esc(p.link)}</p></div><a class="btn" href="${p.link}" target="_blank" rel="noopener sponsored">Open</a></article>`).join('');
+      }
+      render(programs);
+      document.getElementById('q').addEventListener('input',e=>{
+        const q=e.target.value.trim().toLowerCase();
+        render(programs.filter(p=>!q||`${p.name} ${p.slug} ${p.link}`.toLowerCase().includes(q)));
+      });
+    }
+    run();
+  </script>
+</body>
+</html>
